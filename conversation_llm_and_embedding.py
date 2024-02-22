@@ -59,8 +59,8 @@ tts_engine = pyttsx3.init()
 tts_engine.setProperty('voice', 'english+f4') 
 
 ### VARS
-start_record_word = "Hello smart"
-stop_application_word = "see you smart"
+start_record_word = os.getenv("START_CHAT_KEYWORD")
+stop_application_word = os.getenv("STOP_CHAT_APPLICATION_KEYWORD")
 connection_string = pgvector_langchain.CONNECTION_STRING
 connection_name = pgvector_langchain.CONNECTION_NAME
 file_record_to_be_enbedded = os.getenv("FILE_RECORD_TO_BE_EMBEDDED")
