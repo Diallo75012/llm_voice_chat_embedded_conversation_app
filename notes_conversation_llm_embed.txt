@@ -1,0 +1,52 @@
+# install poetry to handle dependecies conflicts as we are going to mix both requirements.txt from the two different virtualenvs tts_stt and langchain_embedding project to build our app:
+curl -sSL https://install.python-poetry.org | python3 -
+export PATH="/home/creditizens/.local/bin:$PATH"
+poetry completions bash >> ~/.bash_completion
+poetry init -n # non interactive
+sudo poetry.sh
+then put : <virtualenv_path/bin/>poetry add <package_name_without_version_number>
+sudo sh poetry.sh
+# then install
+poetry install # no need normally as poetry add will also install just need to fix issues with dependency by adding specific versions
+# then export to requirements.txt file and install using pip -r requirements.txt in your virtual env
+llm_chat_embed_venv/bin/poetry export -f requirements.txt --output requirements_reconcileddd_with_poetry.txt --without-hashes
+pip install -r requirements_reconcileddd_with_poetry.txt
+
+## some othe rpotetry commands
+# you can also update packages
+poetry update # for all
+poetry update <package> # for a specific package
+# you can publish also to PYPI
+poetry build
+poetry publish
+# dependencies can be also investigated using pipdeptree
+pip install pipdeptree
+pipdeptree
+Outputs eg:
+launchpadlib==1.10.16
+├── httplib2 [required: Any, installed: 0.20.2]
+│   └── pyparsing [required: >=2.4.2,<4,!=3.0.3,!=3.0.2,!=3.0.1,!=3.0.0, installed: 2.4.7]
+├── keyring [required: Any, installed: 23.5.0]
+├── lazr.restfulclient [required: >=0.9.19, installed: 0.14.4]
+│   └── httplib2 [required: >=0.7.7, installed: 0.20.2]
+│       └── pyparsing [required: >=2.4.2,<4,!=3.0.3,!=3.0.2,!=3.0.1,!=3.0.0, installed: 2.4.7]
+├── lazr.uri [required: Any, installed: 1.0.6]
+└── six [required: Any, installed: 1.16.0]
+
+pipdeptree -p <package_name> # this for a specific package
+pipdeptree --warn # this with warning on dependencies
+pipdeptree --warn req # this to generate a requirement
+
+
+
+ollama==0.1.6
+gruut==2.2.3
+gruut-ipa==0.13.0
+gruut-lang-de==2.0.0
+gruut-lang-en==2.0.0
+gruut-lang-es==2.0.0
+gruut-lang-fr==2.0.2
+
+
+
+
