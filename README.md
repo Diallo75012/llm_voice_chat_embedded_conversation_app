@@ -22,6 +22,24 @@ pip install -r <THE_REQUIREMENT_FILE>.txt
 - Linux Ubuntu-22.04 (worked fine for me) or wsl2 with X11 Xserver maybe for UI (LMStudio or app html page if we develop it further)
 - install requirements and fix dependencies issues if there is any, at the moment of writing this README it was fine just like that (Feb 2024)
 - Make sure to test your mic online to have your voice transcribed
+- .env file with the following env vars:
+```code
+OPENAI_API_KEY=NO_NEED_API_KEY
+MODEL=NO_MODEL_NEEDED
+OLLAMA_MODEL=mistral:7B
+LMSTUDIO_URL="http://127.0.0.1:1235"
+# Postgresql
+DRIVER=psycopg2
+HOST=<POSTGRESQL_URL>
+PORT=<POSTGRESQL_PORT>
+DATABASE=<POSTGRESQL_DATABASE_NAME>
+USER=<POSTGRESQL_USER>
+PASSWORD=<POSTGRESQL_PASSWORD>
+FILE_RECORD_TO_BE_EMBEDDED=<NAME_OF_THE_FILE_TO_WRITE_TO_ALL_CONVERSATIONS_TO_BE_EMBEDDED>
+CONNECTION_NAME=<NAME_OF_YOUR_PGVECTOR_COLLECTION>
+```
+
+
 
 # improvememts to do
 - Try to get better models opensource running locally (Mistral:7B is used here for Ollama and TheBloke Mistral7b for LMStudio)

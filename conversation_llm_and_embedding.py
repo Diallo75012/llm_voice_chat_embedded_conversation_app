@@ -62,8 +62,9 @@ tts_engine.setProperty('voice', 'english+f4')
 start_record_word = "Hello smart"
 stop_application_word = "see you smart"
 connection_string = pgvector_langchain.CONNECTION_STRING
-connection_name = ""
-embeddings = pgvector_langchain.embeddings
+connection_name = pgvector_langchain.CONNECTION_NAME
+file_record_to_be_enbedded = os.getenv("FILE_RECORD_TO_BE_EMBEDDED")
+stop_app = False
 
 ### HELPER FUNCTIONS
 
@@ -118,53 +119,65 @@ def query_llm(text, server_url="http://localhost:1235"):
     return answer['choices'][0]['message']['content']
 
 def continuous_listen():
+  global file_record_to_be_enbedded, start_record_word, stop_application_word
     # Listen continuously for the start and stop words.
     while True:
-        audio_file = record_audio_to_file(duration=3)
+      audio_file = record_audio_to_file(duration=3)
+      transcription = transcribe_audio(audio_file)
+      os.unlink(audio_file)  # Clean up the temporary file every 3 seconds while waiting for the keyword to be activated
+
+      # keyword to start speech
+      if start_record_word in transcription.lower():
+        speak("Hello!... I am ready and listening.")
+        audio_file = record_audio_to_file(duration=12)
         transcription = transcribe_audio(audio_file)
-        os.unlink(audio_file)  # Clean up the temporary file every 3 seconds while waiting for the keyword to be activated
+        os.unlink(audio_file)
+        speak("Okay! ...I'll come back to you!")
+        response = query_llm(transcription)
+        # Write conversation to a file in a structured way
+        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        to_be_embedded = [
+          { 
+            "question" : f"{transcription}",
+            "answer" : f"{response}",
+            "time": f"{now}",
+          }
+        ]
+        # improvement: filename could be variabalized, input or env var
+        with open(file_record_to_be_enbedded, "a") as cr:
+          cr.append(jsonify(to_be_embedded))
+          cr.appen("\n\n") # could be used later on as separator for embeddings chunks "\n\n"
+        # answer to user
+        speak(response)
 
-        # keyword to start speech
-        if start_record_word in transcription.lower():
-            speak("Hello!... I am ready and listening.")
-            audio_file = record_audio_to_file(duration=12)
-            transcription = transcribe_audio(audio_file)
-            os.unlink(audio_file)
-            speak("Okay! ...I'll come back to you!")
-            response = query_llm(transcription)
-            # Write conversation to a file in a structured way
-            now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            to_be_embedded = [
-              { 
-                "question" : f"{transcription}",
-                "answer" : f"{response}",
-                "time": f"{now}",
-              }
-            ]
-            with open("record_conversation_embedding.tx", "a") as cr:
-              cr.append(to_be_embedded)
-              cr.appen("\n\n")
-            # answer to user
-            speak(response)
-
-        # keyword to stop the application
-        elif stop_application_word in transcription.lower():
-            speak("Stop word detected. Goodbye.")
-            break
+      # keyword to stop the application
+      elif stop_application_word in transcription.lower():
+        speak("Stop word detected. Goodbye! The background process is still recording, the application will stop when it is done. .... See You Next Time!")
+        stop_app = True
+        last_embedding = process_embeddings_periodically(collection_name, connection_string)
+        if last_embedding == "stop":
+          break
 
 
 # when the app stops the job stops
-def process_embeddings_periodically():
-  # after 5mn it starts embedding the recorded conversations
-  time.sleep(300)
-  all_docs = chunk_doc("/home/creditizens/voice_llm", ["record_conversation_embedding.txt"]) # list_documents_txt
-  # add fetching data to save to database and then in the while loop when the embedding is done, delete the record completely
-  while True:
-    # Placeholder for your logic to read Q/A data, generate embeddings, and store them
-    create_embedding_collection(all_docs)
-    print("Processing embeddings...")
-    # Wait for 2mn before next run
-    time.sleep(120)
+def process_embeddings_periodically(collection_name, connection_string):
+  global collection_name, connection_string, file_record_to_be_enbedded, stop_app
+  # after 2.5mn it starts embedding the recorded conversations
+  time.sleep(150)
+  all_docs = chunk_doc("/home/creditizens/voice_llm", [file_record_to_be_enbedded,]) # list_documents_txt
+  if stop_app == True:
+    create_embedding_collection(all_docs, collection_name, connection_string)
+    print("Last record embedded, application will stop now!")
+    return "stop"
+  else:
+    # add fetching data to save to database and then in the while loop when the embedding is done, delete the record completely
+    while True:
+      # Placeholder for your logic to read Q/A data, generate embeddings, and store them
+      create_embedding_collection(all_docs, collection_name, connection_string)
+      print("Processing embeddings...")
+      # Wait for 2mn before next run
+      time.sleep(120)
+ 
 
 # can make flask route to retrieve answers best answers from questions, it returns a dictionary with the question and the answer, which could be used as jinja context for html display
 # text_query = "What is the the most populated city in Asia?"
@@ -172,8 +185,14 @@ def process_embeddings_periodically():
 
 if __name__ == "__main__":
     speak("I am ready to chat.")
-    continuous_listen_thread = threading.Thread(target=continuous_listen, daemon=True)
+    # run in the background for periodic embeddings
     embeddings_thread = threading.Thread(target=process_embeddings_periodically, daemon=True)
-    continuous_listen_thread.start()
     embeddings_thread.start()
-    continuous_listen_thread.join()
+    # run as main thread in front which is the app llm vocal chat
+    continuous_listen()
+
+    
+
+
+
+

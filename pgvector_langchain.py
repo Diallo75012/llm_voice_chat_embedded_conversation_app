@@ -1,7 +1,7 @@
 from langchain.docstore.document import Document
 from langchain.text_splitter import CharacterTextSplitter, RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader # will load text from document so no need python `with open , doc.read()`
-from langchain_community.vectorstores.pgvector import PGVector, _get_embedding_collection_store
+from langchain_community.vectorstores.pgvector import PGVector
 # from langchain_community.vectorstores import Lantern # OR using Lantern extension for cosine similarity search
 from langchain.vectorstores.pgvector import DistanceStrategy
 from langchain_openai import OpenAIEmbeddings
@@ -46,7 +46,7 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
      password=os.getenv("PASSWORD"),
 )
 # define collection name
-COLLECTION_NAME = "test_embedding"
+COLLECTION_NAME = os.getenv("CONNECTION_NAME")
 
 
 # HELPER functions , create collection, retrieve from collection, chunk documents
@@ -118,8 +118,8 @@ def vector_db_override(doc, embedding, collection, connection):
 
 ### USE OF EMBEDDING HELPER FOR BUSINESS LOGIC
 ## Creation of the collection
-all_docs = chunk_doc("/home/creditizens/voice_llm", ["docs_txt_files_text_embedding_retrieval/article.txt"]) # list_documents_txt
-def create_embedding_collection(all_docs: list) -> str:
+all_docs = chunk_doc("/home/creditizens/llm_chat_embed_app", ["docs_txt_files_text_embedding_retrieval/article.txt"]) # list_documents_txt
+def create_embedding_collection(all_docs: list, COLLECTION_NAME: str, CONNECTION_STRING: str) -> str:
   collection_name = COLLECTION_NAME
   connection_string = CONNECTION_STRING
   count = 0
@@ -189,19 +189,7 @@ def answer_retriever(query, collection, connection, embedding):
 #db = vector_db_retrieve(COLLECTION_NAME, CONNECTION_STRING, embeddings)
 #print("***********DB************: -->>\n", db.page_content)
 
-# here we get the name of collection it return collection name or None, this is to check if collection exist and know if we create or just search directly or override/update/addocument to it
-name_of_collection_to_check = "Junkette"
-def check_document_exist_or_not(name_of_collection_to_check):
-  with Session(engine) as session: # need sessions as PGVector class method takes in the sessions as parameter with the name of the collection to check
-    get_name = _get_embedding_collection_store.get_by_name()
-    collection_check = get_name(session, name_of_collection_to_check) 
-    if collection_check is None:
-      return False
-    else:
-      return True
 
-print("CHECK COLLECTION EXISTANCE True/False: ", check_document_exist_or_not(name_of_collection_to_check))
-        
 
 """
 ## OR just the route for Ollama native without langchain embeddings

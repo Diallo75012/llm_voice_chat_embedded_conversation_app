@@ -37,16 +37,11 @@ pipdeptree -p <package_name> # this for a specific package
 pipdeptree --warn # this with warning on dependencies
 pipdeptree --warn req # this to generate a requirement
 
-
-
-ollama==0.1.6
-gruut==2.2.3
-gruut-ipa==0.13.0
-gruut-lang-de==2.0.0
-gruut-lang-en==2.0.0
-gruut-lang-es==2.0.0
-gruut-lang-fr==2.0.2
-
+## Issues : we need to manually change the model in the .ollama.py file, if can be in .local of in your virtual environment
+# install ollama as well for embeddings
+Go to your virtual environment were packages are installed and change the model name, it has to match the model that you are running on ollama:
+sudo nano /home/creditizens/voice_llm/voice_venv/lib/python3.10/site-packages/langchain_community/embeddings/ollama.py
+line 37(at the moment...) :     model: str = "mistral:7b" # we are running mistral:7b
 
 
 
