@@ -46,7 +46,7 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
      password=os.getenv("PASSWORD"),
 )
 # define collection name
-COLLECTION_NAME = os.getenv("CONNECTION_NAME")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME")
 
 
 # HELPER functions , create collection, retrieve from collection, chunk documents

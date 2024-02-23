@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 from flask import Flask, request
 from database import init_db, SessionLocal
 from models import PgRecord, ConversationEmbedding
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, json
 
 # access to env vars
 load_dotenv()
@@ -62,7 +62,7 @@ tts_engine.setProperty('voice', 'english+f4')
 start_record_word = os.getenv("START_CHAT_KEYWORD")
 stop_application_word = os.getenv("STOP_CHAT_APPLICATION_KEYWORD")
 connection_string = pgvector_langchain.CONNECTION_STRING
-connection_name = pgvector_langchain.CONNECTION_NAME
+collection_name = pgvector_langchain.COLLECTION_NAME
 file_record_to_be_enbedded = os.getenv("FILE_RECORD_TO_BE_EMBEDDED")
 stop_app = False
 
@@ -120,54 +120,56 @@ def query_llm(text, server_url="http://localhost:1235"):
 
 def continuous_listen():
   global file_record_to_be_enbedded, start_record_word, stop_application_word
-    # Listen continuously for the start and stop words.
-    while True:
-      audio_file = record_audio_to_file(duration=3)
+  # Listen continuously for the start and stop words.
+  # message to let user know what is the start record keyword
+  speak(f"To start recording just say: {start_record_word}")
+  while True:
+    audio_file = record_audio_to_file(duration=5)
+    transcription = transcribe_audio(audio_file)
+    os.unlink(audio_file)  # Clean up the temporary file every 3 seconds while waiting for the keyword to be activated
+    # keyword to start speech
+    print(f"************* TRANSCRIPTION: {transcription.lower().split(' ')} - IN OR NOT: ", True if start_record_word in transcription.lower() else False )
+    if start_record_word.lower() in transcription.lower().split(" "):
+      speak("Hello... I am ready and listening")
+      audio_file = record_audio_to_file(duration=12)
       transcription = transcribe_audio(audio_file)
-      os.unlink(audio_file)  # Clean up the temporary file every 3 seconds while waiting for the keyword to be activated
-
-      # keyword to start speech
-      if start_record_word in transcription.lower():
-        speak("Hello!... I am ready and listening.")
-        audio_file = record_audio_to_file(duration=12)
-        transcription = transcribe_audio(audio_file)
-        os.unlink(audio_file)
-        speak("Okay! ...I'll come back to you!")
-        response = query_llm(transcription)
-        # Write conversation to a file in a structured way
-        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        to_be_embedded = [
-          { 
-            "question" : f"{transcription}",
-            "answer" : f"{response}",
-            "time": f"{now}",
-          }
-        ]
-        # improvement: filename could be variabalized, input or env var
-        with open(file_record_to_be_enbedded, "a") as cr:
-          cr.append(jsonify(to_be_embedded))
-          cr.appen("\n\n") # could be used later on as separator for embeddings chunks "\n\n"
-        # answer to user
-        speak(response)
-
-      # keyword to stop the application
-      elif stop_application_word in transcription.lower():
-        speak("Stop word detected. Goodbye! The background process is still recording, the application will stop when it is done. .... See You Next Time!")
-        stop_app = True
-        last_embedding = process_embeddings_periodically(collection_name, connection_string)
-        if last_embedding == "stop":
-          break
+      os.unlink(audio_file)
+      speak("Okay ... I'll come back to you")
+      response = query_llm(transcription)
+      # Write conversation to a file in a structured way
+      now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+      to_be_embedded = [
+        { 
+          "question" : f"{transcription}",
+          "answer" : f"{response}",
+          "time": f"{now}",
+        }
+      ]
+      # improvement: filename could be variabalized, input or env var
+      with open(file_record_to_be_enbedded, "a") as cr:
+        cr.write(json.dumps(to_be_embedded))
+        cr.write("\n\n") # could be used later on as separator for embeddings chunks "\n\n"
+      # answer to user
+      speak(f"This is the answer of our robot assistant... {response}")
+    # keyword to stop the application
+    elif stop_application_word.lower() in transcription.lower().split(" "):
+      speak("Stop word detected ... Goodbye The background process is still recording ... the application will stop when it is done .... See You Next Time")
+      stop_app = True
+      last_embedding = process_embeddings_periodically(collection_name, connection_string, stop_app)
+      if last_embedding == "stop":
+        break
 
 
 # when the app stops the job stops
-def process_embeddings_periodically(collection_name, connection_string):
-  global collection_name, connection_string, file_record_to_be_enbedded, stop_app
-  # after 2.5mn it starts embedding the recorded conversations
-  time.sleep(150)
-  all_docs = chunk_doc("/home/creditizens/voice_llm", [file_record_to_be_enbedded,]) # list_documents_txt
+def process_embeddings_periodically(collection_name, connection_string, stop_app):
+  global file_record_to_be_enbedded
+  # after 1mn it starts embedding the recorded conversations
+  time.sleep(60)
+  all_docs = chunk_doc("/home/creditizens/llm_chat_embed_app", [file_record_to_be_enbedded,]) # list_documents_txt
   if stop_app == True:
     create_embedding_collection(all_docs, collection_name, connection_string)
     print("Last record embedded, application will stop now!")
+    speak("Last record embedded, application will stop now!")
     return "stop"
   else:
     # add fetching data to save to database and then in the while loop when the embedding is done, delete the record completely
@@ -175,8 +177,8 @@ def process_embeddings_periodically(collection_name, connection_string):
       # Placeholder for your logic to read Q/A data, generate embeddings, and store them
       create_embedding_collection(all_docs, collection_name, connection_string)
       print("Processing embeddings...")
-      # Wait for 2mn before next run
-      time.sleep(120)
+      # Wait for 1mn before next run
+      time.sleep(60)
  
 
 # can make flask route to retrieve answers best answers from questions, it returns a dictionary with the question and the answer, which could be used as jinja context for html display
@@ -185,11 +187,11 @@ def process_embeddings_periodically(collection_name, connection_string):
 
 if __name__ == "__main__":
     speak("I am ready to chat.")
+    # run as main thread in front which is the app llm vocal chat
+    continuous_listen()
     # run in the background for periodic embeddings
     embeddings_thread = threading.Thread(target=process_embeddings_periodically, daemon=True)
     embeddings_thread.start()
-    # run as main thread in front which is the app llm vocal chat
-    continuous_listen()
 
     
 

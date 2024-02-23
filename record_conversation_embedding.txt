@@ -1,0 +1,10 @@
+[{"question": " What is the biggest capital city in Asia? ", "answer": " Tokyo, Japan", "time": "23/02/2024 12:13:18"}]
+
+[{"question": " Who is the president of Russia? ", "answer": " Vladimir Putin", "time": "23/02/2024 12:14:37"}]
+
+[{"question": " What is the best strategy to write an article?  It's you optimized.  You ", "answer": " The best strategy for writing an article is to research your topic thoroughly, outline a clear structure, organize your ideas logically, use a conversational tone and active voice, cite sources, edit carefully and proofread before publishing.", "time": "23/02/2024 12:15:42"}]
+
+[{"question": " What is the latitude and longitude of Mexico City? ", "answer": " The geographic coordinates of Mexico City, Mexico are approximately 19.4333\u00b0 N latitude and 99.1332\u00b0 W longitude.", "time": "23/02/2024 14:12:17"}]
+
+[{"question": " What is the recipe for spaghetti bolognese?  What is the recipe for spaghetti bolognese?  What is the recipe for spaghetti bolognese? ", "answer": " Spaghetti Bolognese Recipe:\n\nIngredients:\n- 1 pound ground beef or turkey\n- 1 onion, chopped\n- 2 cloves garlic, minced\n- 1 can (14.5 oz) diced tomatoes\n- 1 can (6 oz) tomato paste\n- 1/2 cup water\n- 1 teaspoon dried basil\n- 1 teaspoon dried oregano\n- Salt and pepper to taste\n- Cooked spaghetti noodles\n\nInstructions:\n1. In a large skillet, cook ground beef or turkey over medium heat until browned. Drain grease if necessary.\n2. Add onion and garlic, cooking for an additional 5 minutes, stirring frequently.\n3. Stir in tomatoes, tomato paste, water, basil, oregano, salt, and pepper.\n4. Reduce heat to low and simmer for 30 minutes, stirring occasionally.\n5. Serve over cooked spaghetti noodles. Enjoy!", "time": "23/02/2024 14:29:58"}]
+
